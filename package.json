@@ -1,7 +1,7 @@
 {
   "name": "instagram-scraper-master",
   "version": "1.0.0",
-  "description": "Instagram web scraper, takes in username and number of posts and then builds json out of it.",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
