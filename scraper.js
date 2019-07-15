@@ -66,6 +66,7 @@ class Scraper {
     var media = new Set();
     var index = `.`;
 
+    // this code block is adapted code from https://github.com/adimango/insights-for-instagram-scraper
     while (maxItems == null || media.size < maxItems) {
       try {
         previousHeight = await page.evaluate(`document.body.scrollHeight`);
