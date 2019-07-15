@@ -14,6 +14,10 @@ npm i
 
 ```
 node index.js [username] [numberOfPosts | optional | max = 50]
+
+### Example
+node index.js kimkardashian 30
 ```
 
 A JSON file will be written to the ```json``` directory
+
