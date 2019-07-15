@@ -102,11 +102,11 @@ class Scraper {
 
   async buildJSON(posts) {
     console.log(chalk.yellow(`Writing JSON...`));
-    var tmp = [];
+    var tmp = {};
 
-    tmp.push(this.userName);
-    tmp.push(this.name);
-    tmp.push(posts);
+    tmp.username = this.userName;
+    tmp.name = this.name;
+    tmp.posts = posts;
 
     fs.writeFileSync(`./json/${this.userName}_nodes.json`, JSON.stringify(tmp));
     await this.page.close();
@@ -146,7 +146,7 @@ class Scraper {
           return document.querySelector("div.C4VMK > span").innerHTML;
         }
       });
-      // console.log(text);
+
 
       let likes = await this.page.evaluate(() => {
         if (document.querySelector("div.Nm9Fw") !== null) {
@@ -163,9 +163,7 @@ class Scraper {
       });
 
       // if likes is null, then it is a video, not a picture
-      // if (likes !== null) {
-      //   console.log(likes);
-      // }
+
       var obj = {};
       obj.src = sources[0];
       obj.text = text;
