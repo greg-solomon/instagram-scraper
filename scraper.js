@@ -108,6 +108,9 @@ class Scraper {
     tmp.name = this.name;
     tmp.posts = posts;
 
+    if (!fs.existsSync('./json')) {
+      fs.mkdirSync('./json');
+    }
     fs.writeFileSync(`./json/${this.userName}_nodes.json`, JSON.stringify(tmp));
     await this.page.close();
     await this.browser.close();
