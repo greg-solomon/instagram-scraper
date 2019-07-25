@@ -90,7 +90,6 @@ class Scraper {
           return link.match(linkRegEx);
         });
 
-
         links.forEach(element => {
           if (media.size < maxItems) {
             media.add(element);
@@ -102,21 +101,6 @@ class Scraper {
       }
       return media;
     }
-  }
-
-  async buildJSON(posts) {
-    console.log(chalk.yellow(`Writing JSON...`));
-    var tmp = [];
-
-    tmp.push(this.userName);
-    tmp.push(this.name);
-    tmp.push(posts);
-    if (!fs.existsSync(`./json`)) {
-      fs.mkdirSync(`./json`);
-    }
-    fs.writeFileSync(`./json/${this.userName}_nodes.json`, JSON.stringify(tmp));
-    await this.page.close();
-    await this.browser.close();
   }
 
   async fetchMetaData() {
@@ -179,6 +163,21 @@ class Scraper {
     }
 
     await this.buildJSON(posts);
+  }
+
+  async buildJSON(posts) {
+    console.log(chalk.yellow(`Writing JSON...`));
+    var tmp = {};
+
+    tmp.push("username", this.userName);
+    tmp.push("name", this.name);
+    tmp.push("posts", posts);
+    if (!fs.existsSync(`./json`)) {
+      fs.mkdirSync(`./json`);
+    }
+    fs.writeFileSync(`./json/${this.userName}_nodes.json`, JSON.stringify(tmp));
+    await this.page.close();
+    await this.browser.close();
   }
 }
 
