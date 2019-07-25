@@ -4,12 +4,12 @@ const fs = require("fs");
 const chalk = require("chalk");
 
 class Scraper {
-  constructor(userName, numberOfPosts = 25) {
+  constructor(userName, numberOfPosts = 50) {
     this.userName = userName;
     this.name = "";
-    if (numberOfPosts > 50) {
-      this.numberOfPosts = 50;
-      console.log(`Maximum number of posts to fetch is 50`);
+    if (numberOfPosts > 100) {
+      this.numberOfPosts = 100;
+      console.log(`Maximum number of posts to fetch is 100`);
     } else {
       this.numberOfPosts = numberOfPosts;
     }
@@ -64,7 +64,7 @@ class Scraper {
     var page = this.page;
     let previousHeight;
     var media = new Set();
-    var index = `.`;
+    // var index = `.`;
 
     // this code block is adapted code from https://github.com/adimango/insights-for-instagram-scraper
     while (maxItems == null || media.size < maxItems) {
@@ -79,14 +79,18 @@ class Scraper {
           return [].map.call(links, link => link.href);
         });
 
+        // console.log(nodes);
+
         this.name = await page.evaluate(() => {
           return document.querySelector("h1.rhpdm").innerHTML;
         });
 
-        const linkRegEx = /\/(p)\/............/gim;
+        const linkRegEx = /.........................\/p\/..........*/gi;
         const links = await nodes.filter(link => {
           return link.match(linkRegEx);
         });
+
+
         links.forEach(element => {
           if (media.size < maxItems) {
             media.add(element);
@@ -102,15 +106,12 @@ class Scraper {
 
   async buildJSON(posts) {
     console.log(chalk.yellow(`Writing JSON...`));
-    var tmp = {};
+    var tmp = [];
 
-    tmp.username = this.userName;
-    tmp.name = this.name;
-    tmp.posts = posts;
+    tmp.push(this.userName);
+    tmp.push(this.name);
+    tmp.push(posts);
 
-    if (!fs.existsSync('./json')) {
-      fs.mkdirSync('./json');
-    }
     fs.writeFileSync(`./json/${this.userName}_nodes.json`, JSON.stringify(tmp));
     await this.page.close();
     await this.browser.close();
@@ -150,7 +151,6 @@ class Scraper {
         }
       });
 
-
       let likes = await this.page.evaluate(() => {
         if (document.querySelector("div.Nm9Fw") !== null) {
           let tmp = document
@@ -166,7 +166,9 @@ class Scraper {
       });
 
       // if likes is null, then it is a video, not a picture
-
+      // if (likes !== null) {
+      //   console.log(likes);
+      // }
       var obj = {};
       obj.src = sources[0];
       obj.text = text;
