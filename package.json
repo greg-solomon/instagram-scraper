@@ -9,7 +9,6 @@
   "author": "Greg Solomon",
   "license": "ISC",
   "dependencies": {
-    "chalk": "^2.4.2",
     "puppeteer": "^1.18.1"
   }
 }
