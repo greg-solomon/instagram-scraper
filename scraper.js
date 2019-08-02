@@ -1,184 +1,219 @@
-/*jshint esversion: 8 */
-const puppeteer = require("puppeteer");
-const fs = require("fs");
-const chalk = require("chalk");
+const puppeteer = require('puppeteer');
+const fs = require('fs');
 
-class Scraper {
-  constructor(userName, numberOfPosts = 50) {
-    this.userName = userName;
-    this.name = "";
-    if (numberOfPosts > 100) {
-      this.numberOfPosts = 100;
-      console.log(`Maximum number of posts to fetch is 100`);
-    } else {
-      this.numberOfPosts = numberOfPosts;
-    }
-    this.url = `https://instagram.com/` + userName;
-    this.items = [];
-    this.start();
-  }
 
-  async start() {
-    console.log(
-      `username : ${chalk.green(
-        this.userName
-      )} \nnumber of posts to fetch : ${chalk.green(
-        this.numberOfPosts
-      )}\n URL @ : ${chalk.green(this.url)}`
-    );
-    this.browser = await puppeteer.launch();
+async function getPosts(user, postsToFetch) {
+  url = `https://instagram.com/${user}`;
+  let media = [];
+  let previousHeight;
+  try {
+    const browser = await puppeteer.launch();
 
-    this.page = await this.browser.newPage();
+    const page = await browser.newPage();
 
-    await this.page.setExtraHTTPHeaders({
+    await page.setExtraHTTPHeaders({
       "Accept-Language": "en-US"
     });
 
-    await this.page.goto(this.url, {
+    await page.goto(url, {
       waitUntil: "networkidle2"
     });
 
-    if (await this.page.$(".dialog-404")) {
-      console.error(
-        "The username you provided may be wrong or the link is broken"
-      );
+    if (await page.$(".dialog-404")) {
+      console.error("The username you provided may be wrong or the link is broken");
       process.exit();
     }
 
-    console.log(`Valid page found. Going to URL...`);
-    this.evaluate();
-  }
-
-  async evaluate() {
-    try {
-      this.items = await this.loadPage(this.numberOfPosts);
-    } catch (error) {
-      console.error(chalk.red(`There was a problem parsing the page`));
-      process.exit();
-    }
-    await this.fetchMetaData();
-  }
-
-  async loadPage() {
-    const maxItems = this.numberOfPosts;
-    var page = this.page;
-    let previousHeight;
-    var media = new Set();
-    // var index = `.`;
-
-    // this code block is adapted code from https://github.com/adimango/insights-for-instagram-scraper
-    while (maxItems == null || media.size < maxItems) {
+    while (media.length < postsToFetch) {
       try {
         previousHeight = await page.evaluate(`document.body.scrollHeight`);
         await page.evaluate(`window.scrollTo(0, document.body.scrollHeight)`);
 
-        await page.waitFor(1000);
 
-        const nodes = await page.evaluate(() => {
-          const links = document.querySelectorAll(`a`);
+
+        const allLinks = await page.evaluate(() => {
+          const links = document.querySelectorAll('a');
           return [].map.call(links, link => link.href);
         });
 
-        // console.log(nodes);
-
-        this.name = await page.evaluate(() => {
-          return document.querySelector("h1.rhpdm").innerHTML;
-        });
 
         const linkRegEx = /.........................\/p\/..........*/gi;
-        const links = await nodes.filter(link => {
+
+        const picLinks = await allLinks.filter(link => {
+
           return link.match(linkRegEx);
         });
 
-        links.forEach(element => {
-          if (media.size < maxItems) {
-            media.add(element);
-          }
+        if (picLinks.length < postsToFetch) {
+          postsToFetch = picLinks.length;
+        }
+
+        picLinks.forEach(element => {
+          
+          if (media.length < postsToFetch) media.push(element);
         });
-      } catch (error) {
-        console.error(error);
+
+      } catch (err) {
+        console.error(err);
         break;
       }
+      await browser.close();
       return media;
     }
-  }
-
-  async fetchMetaData() {
-    let posts = {};
-
-    console.log(chalk.red(`Fetching data from individual posts...`));
-
-    let items = this.items;
-    for (var item of items) {
-      await this.page.goto(item, {
-        waitUntil: "networkidle2"
-      });
-
-      if (await this.page.$(".dialog-404")) {
-        console.error(
-          "The username you provided may be wrong or the link is broken"
-        );
-        process.exit();
-      }
-
-      // TEXT QUERY   --> div.C4VMK > span
-      // LIKES QUERY  --> div.Nm9Fw > button > span
-      // IMG SRC      --> div.KL4BH > img.src
-      let sources = await this.page.evaluate(() => {
-        const tmp = document.querySelectorAll("div.KL4Bh > img");
-        return [].map.call(tmp, img => img.src);
-      });
-
-      let text = await this.page.evaluate(() => {
-        if (document.querySelector("div.C4VMK > span") === null) {
-          return "";
-        } else {
-          return document.querySelector("div.C4VMK > span").innerHTML;
-        }
-      });
-
-      let likes = await this.page.evaluate(() => {
-        if (document.querySelector("div.Nm9Fw") !== null) {
-          let tmp = document
-            .querySelector("div.Nm9Fw")
-            .innerHTML.slice(
-              55,
-              document.querySelector("div.Nm9Fw").innerHTML.length - 17
-            );
-          let num = tmp.replace(/,/g, "");
-          num = parseInt(num);
-          return num + 1;
-        }
-      });
-
-      // if likes is null, then it is a video, not a picture
-      // if (likes !== null) {
-      //   console.log(likes);
-      // }
-      var obj = {};
-      obj.src = sources[0];
-      obj.text = text;
-      obj.likes = likes;
-      posts[item] = obj;
-    }
-
-    await this.buildJSON(posts);
-  }
-
-  async buildJSON(posts) {
-    console.log(chalk.yellow(`Writing JSON...`));
-    var tmp = {};
-
-    tmp.push("username", this.userName);
-    tmp.push("name", this.name);
-    tmp.push("posts", posts);
-    if (!fs.existsSync(`./json`)) {
-      fs.mkdirSync(`./json`);
-    }
-    fs.writeFileSync(`./json/${this.userName}_nodes.json`, JSON.stringify(tmp));
-    await this.page.close();
-    await this.browser.close();
+  } catch (err) {
+    console.error(err.message);
+    process.exit();
   }
 }
 
-module.exports = Scraper;
+async function getNameAndProfilePicture(user) {
+  const url = `https://instagram.com/${user}`;
+  try {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    await page.setExtraHTTPHeaders({
+      "Accept-Language": "en-US"
+    });
+
+    await page.goto(url, {
+      waitUntil: "networkidle2"
+    });
+
+    if (await page.$(".dialog-404")) {
+      console.error("The username you provided may be wrong or the link is broken");
+      process.exit();
+    }
+
+
+
+    let name = await page.evaluate(() => {
+      return document.querySelector("h1.rhpdm").innerHTML;
+    });
+
+    let profilePicture = await page.evaluate(() => {
+      return document.querySelector("img._6q-tv").src;
+    });
+
+    await browser.close();
+    
+
+    let obj = {
+      name: await name,
+      displayPic: await profilePicture
+    }
+
+    return obj;
+  } catch (err) {
+    console.error(err.message);
+    process.exit();
+  }
+
+
+}
+
+async function getPostData(url) {
+  // for each post, go to url, extract img src, caption, and likes
+ 
+  try {
+
+    const browser = await puppeteer.launch();
+
+    const page = await browser.newPage();
+
+    await page.setExtraHTTPHeaders({
+      "Accept-Language": "en-US"
+    });
+
+
+    await page.goto(url, {
+      waitUntil: "networkidle2"
+    });
+
+    if (await page.$(".dialog-404")) {
+      console.error("The username you provided may be wrong or the link is broken");
+      process.exit();
+    }
+
+    const imgSrc = await page.evaluate(() => {
+      if (document.querySelectorAll("div.KL4Bh > img")) {
+        const tmp = document.querySelectorAll("div.KL4Bh > img");
+        return [].map.call(tmp, img => img.src);
+      } else {
+        return 'Video';
+      }
+
+    });
+
+
+
+    const text = await page.evaluate(() => {
+      if (document.querySelector("div.C4VMK > span") === null) {
+        return "";
+      } else {
+        return document.querySelector("div.C4VMK > span").innerHTML;
+      }
+    });
+
+    let likes = await page.evaluate(() => {
+      if (document.querySelector('div.Nm9Fw > button > span') !== null) {
+        let temp = document.querySelector('div.Nm9Fw > button > span').innerHTML;
+        let numStr = temp.replace(/,/g, "");
+        let num = parseInt(numStr);
+        return num + 1;
+      }
+
+    });
+    // console.log(await likes);
+    var obj = {};
+
+    obj.src = imgSrc;
+    obj.text = text;
+    obj.likes = likes;
+
+    await browser.close();
+    
+    return obj;
+  } catch (err) {
+    console.error(err.message);
+  }
+
+}
+
+
+const app = async (user, postsToFetch) => {
+  try {
+    const nameAndPicture = await getNameAndProfilePicture(user);
+    const posts = await getPosts(user, postsToFetch);
+
+    postData = {};
+
+    for (var post of posts) {
+      
+
+      var obj = await getPostData(post);
+      
+      postData[post] = obj;
+
+    }
+
+    if (!fs.existsSync(`./json`)) {
+      fs.mkdirSync(`./json`);
+    }
+
+    finalObj = {};
+    finalObj.user = user;
+    finalObj.name = nameAndPicture.name;
+    finalObj.profilePicture = nameAndPicture.displayPic;
+    finalObj.posts = postData;
+
+
+    fs.writeFileSync(`./json/${user}_nodes.json`, JSON.stringify(finalObj));
+
+    console.log('JSON written');
+
+  } catch (err) {
+    console.error(err.message);
+  }
+
+}
