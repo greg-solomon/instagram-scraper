@@ -1,2 +1,2 @@
-Fetches data from a public instagram profile. 
+Instagram scraper functions.
 
