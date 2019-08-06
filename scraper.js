@@ -3,7 +3,7 @@ const cheerio = require("cheerio");
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 
-const fetchProfile = async (USERNAME) => {
+export const fetchProfile = async (USERNAME) => {
   const BASE_URL = `https://www.instagram.com/${USERNAME}/`;
 
   // Fetch the easy to grab data, code block from https://learnscraping.com/scraping-instagram-profile-data-with-nodejs/
@@ -56,7 +56,7 @@ const fetchProfile = async (USERNAME) => {
   }
 };
 
-const fetchPosts = async (postsToFetch, profile) => {
+export const fetchPosts = async (postsToFetch, profile) => {
   const url = `https://instagram.com/${profile.username}`;
   const browser = await puppeteer.launch({});
 
@@ -114,7 +114,7 @@ const fetchPosts = async (postsToFetch, profile) => {
   return media;
 };
 
-const fetchMetaData = async (posts) => {
+export const fetchMetaData = async (posts) => {
   try {
     console.log(`fetching data from ${posts.length} posts...`);
 
