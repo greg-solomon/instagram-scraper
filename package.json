@@ -1,5 +1,5 @@
 {
-  "name": "instagram-scraper",
+  "name": "scraper-v3",
   "version": "1.0.0",
   "description": "",
   "main": "scraper.js",
@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "Greg Solomon",
+  "author": "",
   "license": "ISC",
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
