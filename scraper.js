@@ -3,18 +3,21 @@ const cheerio = require("cheerio");
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 
-const fetchProfile = async (USERNAME) => {
+const fetchProfile = async USERNAME => {
   const BASE_URL = `https://www.instagram.com/${USERNAME}/`;
 
   // Fetch the easy to grab data, code block from https://learnscraping.com/scraping-instagram-profile-data-with-nodejs/
   try {
     let response = await request(BASE_URL, {
-      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+      accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
       "accept-encoding": "gzip, deflate, br",
-      "accept-language": "en-US,en;q=0.9,fr;q=0.8,ro;q=0.7,ru;q=0.6,la;q=0.5,pt;q=0.4,de;q=0.3",
+      "accept-language":
+        "en-US,en;q=0.9,fr;q=0.8,ro;q=0.7,ru;q=0.6,la;q=0.5,pt;q=0.4,de;q=0.3",
       "cache-control": "max-age=0",
       "upgrade-insecure-requests": "1",
-      "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"
+      "user-agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"
     });
 
     let $ = cheerio.load(response);
@@ -27,19 +30,13 @@ const fetchProfile = async (USERNAME) => {
       entry_data: {
         ProfilePage: {
           [0]: {
-            graphql: {
-              user
-            }
+            graphql: { user }
           }
         }
       }
     } = JSON.parse(/window\._sharedData = (.+);/g.exec(script)[1]);
 
-    const {
-      full_name,
-      biography,
-      profile_pic_url_hd
-    } = user;
+    const { full_name, biography, profile_pic_url_hd } = user;
 
     // console.log(`${full_name}\n${biography}\n${profile_pic_url_hd}\n`);
 
@@ -114,7 +111,7 @@ const fetchPosts = async (postsToFetch, profile) => {
   return media;
 };
 
-const fetchMetaData = async (posts) => {
+const fetchMetaData = async posts => {
   try {
     console.log(`fetching data from ${posts.length} posts...`);
 
@@ -172,7 +169,6 @@ const fetchMetaData = async (posts) => {
     }
     await browser.close();
     return allPosts;
-
   } catch (err) {
     console.error(err);
   }
@@ -184,7 +180,6 @@ const app = async (USER, postsToFetch) => {
   const posts = await fetchPosts(postsToFetch, profile);
 
   const postData = await fetchMetaData(posts);
-
 
   if (!fs.existsSync("./json")) {
     fs.mkdir("./json");
@@ -200,9 +195,10 @@ const app = async (USER, postsToFetch) => {
 
   console.log(`JSON written`);
   return data;
-
-}
+};
 
 module.exports.fetchProfile = fetchProfile;
 module.exports.fetchPosts = fetchPosts;
 module.exports.fetchMetaData = fetchMetaData;
+
+app("oleknyc", 50);
