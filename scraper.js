@@ -1,9 +1,9 @@
-const puppeteer = require('puppeteer');
-const request = require('request-promise');
-const cheerio = require('cheerio');
-const fs = require('fs');
+const puppeteer = require("puppeteer");
+const request = require("request-promise");
+const cheerio = require("cheerio");
+const fs = require("fs");
 
-const getProfile = async (USERNAME) => {
+const getProfile = async USERNAME => {
     // Get profile from script tag
     BASE_URL = `https://instagram.com/${USERNAME}`;
 
@@ -19,12 +19,14 @@ const getProfile = async (USERNAME) => {
 
         let $ = cheerio.load(response);
 
-
-        let script = $("script").eq(4).html();
+        let script = $("script")
+            .eq(4)
+            .html();
         if (/window\._sharedData = (.+);/g.exec(script) === null) {
-            script = $("script").eq(3).html();
+            script = $("script")
+                .eq(3)
+                .html();
         }
-
 
         let {
             entry_data: {
@@ -56,7 +58,7 @@ const getProfile = async (USERNAME) => {
         console.error(err.message);
         console.error(`Cannot fetch ${USERNAME}'s data`);
     }
-}
+};
 
 const getPosts = async (USERNAME, postsToFetch) => {
     // get posts with puppeteer
@@ -82,37 +84,52 @@ const getPosts = async (USERNAME, postsToFetch) => {
     let media = [];
     let previousHeight;
     let scrollHeight;
-    while (await page.evaluate(`document.body.scrollHeight`) < postsToFetch * 200 || media.length < postsToFetch) {
 
-        // Scroll Page
-        previousHeight = await page.evaluate(`document.body.scrollHeight`);
-        await page.evaluate(`window.scrollTo(0, document.body.scrollHeight)`);
-        await page.waitForFunction(
-            `document.body.scrollHeight > ${previousHeight}`
-        );
-        scrollHeight = await page.evaluate(`document.body.scrollHeight`);
+    try {
+        let toBreak = false;
+        while (
+            (await page.evaluate(`document.body.scrollHeight`)) <
+            postsToFetch * 200 ||
+            media.length < postsToFetch
+        ) {
+            // Fetch links to individual posts
+            const allLinks = await page.evaluate(() => {
+                const links = document.querySelectorAll(
+                    `article > div > div > div > div > a`
+                );
+                return [].map.call(links, link => link.href);
+            });
 
+            if (allLinks.length < 24) {
+                postsToFetch = allLinks.length - 1;
+                toBreak = true;
+            }
 
-        // Fetch links to individual posts
-        const allLinks = await page.evaluate(() => {
-            const links = document.querySelectorAll(
-                `article > div > div > div > div > a`
+            for (let i = 0; i < allLinks.length; i++) {
+                media.push(allLinks[i]);
+            }
+
+            if (toBreak) {
+                break;
+                return media;
+            }
+            // Scroll Page
+            previousHeight = await page.evaluate(`document.body.scrollHeight`);
+            await page.evaluate(`window.scrollTo(0, document.body.scrollHeight)`);
+            await page.waitForFunction(
+                `document.body.scrollHeight > ${previousHeight}`
             );
-            return [].map.call(links, link => link.href);
-        });
-
-
-        for (let i = 0; i < allLinks.length; i++) {
-            media.push(allLinks[i]);
+            scrollHeight = await page.evaluate(`document.body.scrollHeight`);
         }
+    } catch (err) {
+        console.error(err.message);
     }
 
     await browser.close();
     return media;
-}
+};
 
-const getPostData = async (post) => {
-
+const getPostData = async post => {
     // get post data from script tags
     let response = await request(post, {
         accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
@@ -125,8 +142,9 @@ const getPostData = async (post) => {
 
     let $ = cheerio.load(response);
 
-    let script = $("script").eq(4).html();
-
+    let script = $("script")
+        .eq(4)
+        .html();
 
     let {
         entry_data: {
@@ -142,7 +160,9 @@ const getPostData = async (post) => {
         }
     } = JSON.parse(/window\._sharedData = (.+);/g.exec(script)[1]);
 
-    let meta = $("script").eq(3).html();
+    let meta = $("script")
+        .eq(3)
+        .html();
     let {
         description
     } = JSON.parse(meta);
@@ -152,11 +172,8 @@ const getPostData = async (post) => {
         desc: description
     };
 
-
     return metaObj;
-
-}
-
+};
 
 const app = async (user, postsToFetch) => {
     const profile = await getProfile(user);
@@ -173,7 +190,7 @@ const app = async (user, postsToFetch) => {
         full_name: full_name,
         biography: biography,
         profile_pic: profile_pic
-    }
+    };
 
     postsObj.items = [];
 
@@ -182,9 +199,9 @@ const app = async (user, postsToFetch) => {
         postsObj.items.push(p);
     }
 
-    if (!fs.existsSync('./json')) {
-        fs.mkdirSync('./json');
+    if (!fs.existsSync("./json")) {
+        fs.mkdirSync("./json");
     }
-    console.log(postsObj);
+
     fs.writeFileSync(`./json/${user}.json`, JSON.stringify(postsObj));
-}
+};
