@@ -25,7 +25,7 @@ The most simplest way to use this script is to call the scraperApp function
 `writeFile` set to true will produce a `JSON` file that looks like this: 
 
 
-`
+```json
 {
   "username": "marniethedog",
   "full_name": "Marnie The Dog",
@@ -649,5 +649,5 @@ The most simplest way to use this script is to call the scraperApp function
     }
   ]
 }
-`
+```
 
