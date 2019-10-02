@@ -1,4 +1,7 @@
 Instagram scraper functions.
 
 
-## H2 Basic Installation
+## Basic Installation
+
+Clone the repo and then: 
+`npm install`
