@@ -317,8 +317,6 @@ const scraperApp = async (
   return postsObj;
 };
 
-scraperApp("marniethedog", 24, true);
-
 module.exports.getProfile = getProfile;
 module.exports.getPosts = getPosts;
 module.exports.getPostData = getPostData;
