@@ -20,6 +20,7 @@ The most simplest way to use this script is to call the scraperApp function
 
 `scraperApp(username);`
 
+`scraperApp()` calls 3 main functions `getProfile(username, verbvose)`, `getPosts(user, numberOfPosts, verbose)`, and `getFollowers(user, verbose)`, and then calls `getPostData(post, verbose)` on each post to fetch post data.
 
 
 `writeFile` set to true will produce a `JSON` file that looks like this: 
