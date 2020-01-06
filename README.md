@@ -9,7 +9,7 @@ Clone the repo and then
 `npm install`
 
 
-The most simplest way to use this script is to call the scraperApp function
+The simplest way to use this script is to call the scraperApp function
 
 
 `scraperApp(username[string], numberOfPosts[int], writeFile[boolean], verbose[boolean]);`
